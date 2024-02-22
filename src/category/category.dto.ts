@@ -22,7 +22,7 @@ export class DailyMealCategoryDto {
 }
 
 export class CategoryImageDto {
-    @ApiProperty()
-    @IsNotEmpty()
-    imageURL: string;
-  }
+  @ApiProperty()
+  @IsNotEmpty()
+  imageURL: string;
+}
