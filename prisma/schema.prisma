@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Staff {
+  id      String    @id @default(uuid())
+  name    String
+  phone   String
+  email   String
+  address String
+  role    StaffRole @default(Clerk)
+}
+
+enum StaffRole {
+  Manager
+  Clerk
+}
+
+model Customer {
+  id      String   @id
+  name    String
+  orders  Order[]
+  reviews Review[]
+}
+
+model Category {
+  id           String       @id @default(uuid())
+  name         String
+  startTime    Int?
+  endTime      Int?
+  imageURL     String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  categoryType CategoryType
+  items        Item[]
+}
+
+enum CategoryType {
+  DAILY_MEAL
+  NORMAL_CATEGORY
+}
+
+model Item {
+  id          String      @id @default(uuid())
+  category    Category    @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  name        String
+  price       Int
+  description String?
+  imageURL    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+  reviews     Review[]
+}
+
+model Order {
+  id         String      @id
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  customerId String
+  orderTime  DateTime
+  items      OrderItem[]
+  payment    Payment?
+}
+
+model OrderItem {
+  id       String @id @default(uuid())
+  item     Item   @relation(fields: [itemId], references: [id])
+  itemId   String
+  order    Order  @relation(fields: [orderId], references: [id])
+  orderId  String
+  quantity Int
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  order         Order    @relation(fields: [orderId], references: [id])
+  paymentTime   DateTime
+  totalAmount   Int
+  paymentMethod String
+  orderId       String   @unique
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+  item       Item     @relation(fields: [itemId], references: [id])
+  itemId     String
+  feedback   String
+  rating     Int
+}
