@@ -14,11 +14,11 @@ export class DailyMealCategoryDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  startTime: number;
+  startTime: string;
 
   @ApiProperty()
   @IsNotEmpty()
-  endTime: number;
+  endTime: string;
 }
 
 export class CategoryImageDto {

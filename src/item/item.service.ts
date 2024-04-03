@@ -9,6 +9,28 @@ import {
 export class ItemService {
   constructor(private prisma: PrismaService) {}
 
+  async getItemByCategory(categoryId: string) {
+    try {
+      return await this.prisma.item.findMany({
+        where: { categoryId: categoryId },
+        include: { category: true },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async getItemById(id: string) {
+    try {
+      return await this.prisma.item.findUnique({
+        where: { id },
+        include: { category: true, orderItems: true, reviews: true },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
   async createItem(data: {
     name: string;
     categoryId: string;
@@ -31,12 +53,44 @@ export class ItemService {
     }
   }
 
-  async getItemById(id: string) {
+  async editItem(
+    itemId: string,
+    data: {
+      name?: string;
+      price?: number;
+      description?: string;
+    },
+  ) {
     try {
-      return await this.prisma.item.findUnique({
-        where: { id },
-        include: { category: true, orderItems: true, reviews: true },
+      const updatedItem = await this.prisma.item.update({
+        where: {
+          id: itemId,
+        },
+        data: {
+          name: data.name ?? undefined,
+          price: data.price ?? undefined,
+          description: data.description ?? undefined,
+        },
       });
+
+      return updatedItem;
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async setItemImage(id: string, imageURL: string) {
+    try {
+      const newItem = await this.prisma.item.update({
+        where: {
+          id: id,
+        },
+        data: {
+          imageURL: imageURL,
+        },
+      });
+
+      return newItem;
     } catch (error) {
       this.handlePrismaError(error);
     }

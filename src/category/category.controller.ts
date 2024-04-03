@@ -6,6 +6,7 @@ import {
   DailyMealCategoryDto,
   NormalCategoryDto,
 } from './category.dto';
+import { CategoryType } from '@prisma/client';
 
 @ApiTags('Category')
 @Controller('category')
@@ -13,20 +14,16 @@ export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
   @ApiOperation({ summary: 'Gets all Normal Menu Categories' })
-  @Get('normal')
-  async viewNormalCategories() {
-    return this.categoryService.getNormalCategories();
-  }
-
-  @ApiOperation({ summary: 'Gets all Daily Menu Categories' })
-  @Get('daily-meals')
-  async viewDailyMeals() {
-    return this.categoryService.getDailyMealCategories();
+  @Get(':categoryType')
+  async viewNormalCategories(
+    @Param('categoryType') categoryType: CategoryType,
+  ) {
+    return this.categoryService.getCategories(categoryType);
   }
 
   @ApiOperation({ summary: 'Gets Category by id' })
-  @Get(':id')
-  async viewCategory(@Param('id') categoryId: string) {
+  @Get('/id/:categoryId')
+  async viewCategory(@Param('categoryId') categoryId: string) {
     return this.categoryService.getCategoryById(categoryId);
   }
 
@@ -34,7 +31,7 @@ export class CategoryController {
   @ApiBody({
     type: NormalCategoryDto,
   })
-  @Post('normal')
+  @Post(CategoryType.NORMAL_CATEGORY)
   async createNormalCategories(@Body() data: NormalCategoryDto) {
     return this.categoryService.createNormalCategory(data);
   }
@@ -43,7 +40,7 @@ export class CategoryController {
   @ApiBody({
     type: DailyMealCategoryDto,
   })
-  @Post('dail-meals')
+  @Post(CategoryType.DAILY_MEAL)
   async createDailyMealCategory(@Body() data: DailyMealCategoryDto) {
     return this.categoryService.createDailyMealCategory(data);
   }

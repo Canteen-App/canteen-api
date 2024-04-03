@@ -10,20 +10,10 @@ import { PrismaService } from 'src/prisma.service';
 export class CategoryService {
   constructor(private prisma: PrismaService) {}
 
-  async getNormalCategories() {
+  async getCategories(categoryType: CategoryType) {
     try {
       return await this.prisma.category.findMany({
-        where: { categoryType: CategoryType.NORMAL_CATEGORY },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
-  async getDailyMealCategories() {
-    try {
-      return await this.prisma.category.findMany({
-        where: { categoryType: CategoryType.DAILY_MEAL },
+        where: { categoryType: categoryType },
       });
     } catch (error) {
       this.handlePrismaError(error);
@@ -53,8 +43,8 @@ export class CategoryService {
 
   async createDailyMealCategory(data: {
     name: string;
-    startTime: number;
-    endTime: number;
+    startTime: string;
+    endTime: string;
   }) {
     try {
       return await this.prisma.category.create({
@@ -88,8 +78,8 @@ export class CategoryService {
     categoryId: string,
     data: {
       name: string | undefined;
-      startTime: number | undefined;
-      endTime: number | undefined;
+      startTime: string | undefined;
+      endTime: string | undefined;
     },
   ) {
     try {

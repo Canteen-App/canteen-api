@@ -14,5 +14,21 @@ export class CreateItemDto {
   @IsNotEmpty()
   price: number;
 
-  information: string;
+  description: string;
+}
+
+export class EditItemDto {
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  price: number;
+
+  description: string;
+}
+
+export class SetItemImageDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  imageURL: string;
 }
