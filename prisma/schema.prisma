@@ -46,17 +46,18 @@ enum CategoryType {
 }
 
 model Item {
-  id          String      @id @default(uuid())
-  category    Category    @relation(fields: [categoryId], references: [id])
-  categoryId  String
-  name        String
-  price       Int
-  description String?
-  imageURL    String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  orderItems  OrderItem[]
-  reviews     Review[]
+  id             String      @id @default(uuid())
+  category       Category    @relation(fields: [categoryId], references: [id])
+  categoryId     String
+  name           String
+  price          Int
+  description    String?
+  imageURL       String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  orderItems     OrderItem[]
+  reviews        Review[]
+  cartUserCartId String?
 }
 
 model Order {
