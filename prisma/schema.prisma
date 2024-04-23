@@ -70,12 +70,13 @@ model Order {
 }
 
 model OrderItem {
-  id       String @id @default(uuid())
-  item     Item   @relation(fields: [itemId], references: [id])
-  itemId   String
-  order    Order  @relation(fields: [orderId], references: [id])
-  orderId  String
-  quantity Int
+  id                String @id @default(uuid())
+  item              Item   @relation(fields: [itemId], references: [id])
+  itemId            String
+  order             Order  @relation(fields: [orderId], references: [id])
+  orderId           String
+  quantity          Int
+  quantityCollected Int    @default(0)
 }
 
 model Payment {

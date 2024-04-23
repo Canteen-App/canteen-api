@@ -19,11 +19,11 @@ async function bootstrap() {
       'This is the API that both the Canteen Ordering App and Canteen Order Management System would be using to both interact with each other and the database',
     )
     .setVersion('1.0')
-    .addServer('http://localhost:8080/', 'Local environment')
+    .addServer('http://localhost:8082/', 'Local environment')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(8080);
+  await app.listen(8082);
 }
 bootstrap();
