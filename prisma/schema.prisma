@@ -84,7 +84,6 @@ model Payment {
   order         Order    @relation(fields: [orderId], references: [id])
   paymentTime   DateTime
   totalAmount   Int
-  paymentMethod String
   orderId       String   @unique
 }
 
