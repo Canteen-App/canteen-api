@@ -5,8 +5,8 @@ import { OrderService } from './order.service';
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
-  @Post('/intent')
+  @Post('/payment-intent')
   async makePaymentIntent(@Body() { amount }) {
-    return this.orderService.makePaymentIntent(amount)
+    return this.orderService.makePaymentIntent(amount);
   }
 }
