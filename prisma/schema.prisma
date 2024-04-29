@@ -61,30 +61,50 @@ model Item {
 }
 
 model Order {
-  id         String      @id
+  id         String      @id @default(uuid())
   customer   Customer    @relation(fields: [customerId], references: [id])
   customerId String
-  orderTime  DateTime
+  orderTime  DateTime    @default(now())
   items      OrderItem[]
   payment    Payment?
+  status     OrderStatus @default(PENDING_PAYMENT)
+}
+
+enum OrderStatus {
+  COMPLETE
+  NOT_COLLECTED
+  CANCELED
+  PENDING_PAYMENT
+  PENDING_COLLECTION
 }
 
 model OrderItem {
-  id                String @id @default(uuid())
-  item              Item   @relation(fields: [itemId], references: [id])
-  itemId            String
-  order             Order  @relation(fields: [orderId], references: [id])
-  orderId           String
-  quantity          Int
-  quantityCollected Int    @default(0)
+  id                     String  @id @default(uuid())
+  item                   Item?   @relation(fields: [itemId], references: [id], onDelete: NoAction)
+  itemId                 String?
+  order                  Order   @relation(fields: [orderId], references: [id])
+  orderId                String
+  quantity               Int
+  billedItemName         String?
+  billedPricePerQuantity Int?
+  quantityCollected      Int     @default(0)
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  order         Order    @relation(fields: [orderId], references: [id])
-  paymentTime   DateTime
-  totalAmount   Int
-  orderId       String   @unique
+  id                    String        @id @default(uuid())
+  order                 Order         @relation(fields: [orderId], references: [id])
+  orderId               String        @unique
+  totalAmount           Int
+  canceledTime          DateTime?
+  paymentTime           DateTime?
+  status                PaymentStatus @default(PENDING)
+  stripePaymentIntentId String        @unique
+}
+
+enum PaymentStatus {
+  CANCELED
+  PENDING
+  COMPLETE
 }
 
 model Review {
