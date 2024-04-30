@@ -84,6 +84,45 @@ export class OrderService {
     return orderDetails;
   }
 
+  async getPaymentIntent(orderId: string) {
+    const orderPayment = await this.prisma.payment.findUnique({
+      where: {
+        orderId: orderId,
+        status: 'PENDING',
+      },
+    });
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(
+      orderPayment.stripePaymentIntentId,
+    );
+
+    const latest_charge = paymentIntent.latest_charge;
+    if (latest_charge) {
+      const charge = await stripe.charges.retrieve(latest_charge);
+
+      if (charge.paid) {
+        await this.prisma.order.update({
+          where: {
+            id: orderPayment.orderId,
+          },
+          data: {
+            status: 'PENDING_COLLECTION',
+            payment: {
+              update: {
+                status: 'COMPLETE',
+                paymentTime: new Date(charge.created * 1000),
+              },
+            },
+          },
+        });
+
+        return { paid: true, message: 'Already Paid' };
+      }
+    }
+
+    return { paymentIntent: paymentIntent?.client_secret };
+  }
+
   async getUnPaidUserOrders(user: any) {
     return this.prisma.order.findMany({
       select: {
@@ -149,27 +188,28 @@ export class OrderService {
 
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
     const latest_charge = intent.latest_charge;
-    const charge = await stripe.charges.retrieve(latest_charge);
+    if (latest_charge) {
+      const charge = await stripe.charges.retrieve(latest_charge);
 
-    if (charge.paid) {
-      const paymentMade = await this.prisma.order.update({
-        where: {
-          id: orderPayment.orderId,
-        },
-        data: {
-          status: 'PENDING_COLLECTION',
-          payment: {
-            update: {
-              status: 'COMPLETE',
-              paymentTime: new Date(charge.created * 1000),
+      if (charge.paid) {
+        const paymentMade = await this.prisma.order.update({
+          where: {
+            id: orderPayment.orderId,
+          },
+          data: {
+            status: 'PENDING_COLLECTION',
+            payment: {
+              update: {
+                status: 'COMPLETE',
+                paymentTime: new Date(charge.created * 1000),
+              },
             },
           },
-        },
-      });
+        });
 
-      return paymentMade;
+        return paymentMade;
+      }
     }
-
     return null;
   }
 
