@@ -53,6 +53,13 @@ export class OrderController {
   }
 
   @ApiBearerAuth()
+  @Get('payment-intent/:id')
+  @UseGuards(FirebaseAuthGuard)
+  async getPaymentIntent(@Param('id') orderId: string) {
+    return this.orderService.getPaymentIntent(orderId);
+  }
+
+  @ApiBearerAuth()
   @Get(':id')
   @UseGuards(FirebaseAuthGuard)
   async getOrderDetails(@Param('id') orderId: string) {
