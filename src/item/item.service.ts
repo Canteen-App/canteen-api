@@ -33,6 +33,15 @@ export class ItemService {
               },
             },
           },
+          reviews: {
+            include: {
+              customer: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
         },
       });
 

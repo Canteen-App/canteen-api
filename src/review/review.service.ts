@@ -36,4 +36,34 @@ export class ReviewService {
       return null;
     }
   }
+
+  async makeReview(user, itemId, data: { rating: number; feedback: string }) {
+    try {
+      return await this.prisma.review.create({
+        data: {
+          customer: {
+            connect: {
+              id: user.uid,
+            },
+          },
+          item: {
+            connect: {
+              id: itemId,
+            },
+          },
+          rating: data.rating,
+          feedback: data.feedback ?? '',
+        },
+        include: {
+          customer: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
 }

@@ -125,6 +125,6 @@ model Review {
   customerId String
   item       Item     @relation(fields: [itemId], references: [id])
   itemId     String
-  feedback   String
+  feedback   String?
   rating     Int
 }
