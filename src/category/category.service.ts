@@ -20,12 +20,31 @@ export class CategoryService {
     }
   }
 
-  async getCategoryById(categoryId: string) {
+  async getCategoryById(user, categoryId: string) {
     try {
-      return await this.prisma.category.findUnique({
+      const category = await this.prisma.category.findUnique({
         where: { id: categoryId },
-        include: { items: true },
+        include: {
+          items: {
+            include: {
+              likes: {
+                where: {
+                  customerId: user.uid,
+                },
+              },
+            },
+          },
+        },
       });
+
+      if (category) {
+        // Loop through each item and if there are likes, extract the first one from the array
+        category.items.forEach((item) => {
+          item.likes = item.likes[0] || (null as any);
+        });
+      }
+
+      return category;
     } catch (error) {
       this.handlePrismaError(error);
     }

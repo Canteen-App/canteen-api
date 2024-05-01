@@ -22,10 +22,21 @@ enum StaffRole {
 }
 
 model Customer {
-  id      String   @id
-  name    String
-  orders  Order[]
-  reviews Review[]
+  id            String     @id
+  name          String
+  orders        Order[]
+  reviews       Review[]
+  favoriteItems Favorite[]
+}
+
+model Favorite {
+  itemId     String
+  item       Item     @relation(fields: [itemId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  @@id([itemId, customerId])
+  @@unique([itemId, customerId])
 }
 
 model Category {
@@ -58,6 +69,7 @@ model Item {
   orderItems     OrderItem[]
   reviews        Review[]
   cartUserCartId String?
+  likes          Favorite[]
 }
 
 model Order {

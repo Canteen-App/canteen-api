@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
@@ -7,9 +16,11 @@ import {
   NormalCategoryDto,
 } from './category.dto';
 import { CategoryType } from '@prisma/client';
+import { FirebaseAuthGuard } from 'src/auth/admin.guard';
 
 @ApiTags('Category')
 @Controller('category')
+@UseGuards(FirebaseAuthGuard)
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
@@ -23,8 +34,8 @@ export class CategoryController {
 
   @ApiOperation({ summary: 'Gets Category by id' })
   @Get('/id/:categoryId')
-  async viewCategory(@Param('categoryId') categoryId: string) {
-    return this.categoryService.getCategoryById(categoryId);
+  async viewCategory(@Req() req, @Param('categoryId') categoryId: string) {
+    return this.categoryService.getCategoryById(req.user, categoryId);
   }
 
   @ApiOperation({ summary: 'Creates a Normal Menu Category' })
