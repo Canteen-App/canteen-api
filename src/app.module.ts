@@ -6,6 +6,7 @@ import { ItemModule } from './item/item.module';
 import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { ConfigModule } from '@nestjs/config';
     ItemModule,
     OrderModule,
     AuthModule,
-    ConfigModule.forRoot(), // Assuming you have other modules imported here as well
+    ReviewModule,
+    ConfigModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

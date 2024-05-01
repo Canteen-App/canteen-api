@@ -9,23 +9,39 @@ import {
 export class ItemService {
   constructor(private prisma: PrismaService) {}
 
-  async getItemByCategory(categoryId: string) {
-    try {
-      return await this.prisma.item.findMany({
-        where: { categoryId: categoryId },
-        include: { category: true },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
   async getItemById(id: string) {
     try {
       return await this.prisma.item.findUnique({
         where: { id },
         include: { category: true, orderItems: true, reviews: true },
       });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async getItemInfo(user, id: string) {
+    try {
+      const item = await this.prisma.item.findUnique({
+        where: { id },
+        include: {
+          category: true,
+          likes: {
+            where: {
+              customer: {
+                id: user.uid,
+              },
+            },
+          },
+        },
+      });
+
+      if (item) {
+        // If there's a like, extract the first one from the array
+        item.likes = item.likes[0] || (null as any);
+      }
+
+      return item;
     } catch (error) {
       this.handlePrismaError(error);
     }
