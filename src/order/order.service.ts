@@ -8,18 +8,51 @@ const stripe = require('stripe')(process.env.STRIPE_KEY);
 export class OrderService {
   constructor(private prisma: PrismaService) {}
 
+  async getPaidOrders() {
+    return await this.prisma.order.findMany({
+      where: {
+        status: 'PENDING_COLLECTION',
+        payment: {
+          status: {
+            equals: 'COMPLETE',
+          },
+        },
+      },
+      orderBy: {
+        orderTime: 'desc',
+      },
+      include: {
+        payment: true,
+        customer: true,
+        items: true,
+        _count: {
+          select: {
+            items: true,
+          },
+        },
+      },
+    });
+  }
+
   async checkoutOrder(
     user: any,
     orderList: OrderItemCreateType[],
     currentUserDiplayedAmount: number,
   ) {
     const orderDetails = await this.prisma.$transaction(async (tx) => {
+      // Current Order Items Map
+      const itemList = new Map();
+
       // Calculate total amount and check if it is the same amount displayed to the user
       let totalAmount = 0;
       for (let orderItem of orderList) {
         // Adds Order Item price times its quantity
         const itemDetails = await this.prisma.item.findUnique({
           where: { id: orderItem.itemId },
+        });
+        itemList.set(itemDetails.id, {
+          name: itemDetails.name,
+          price: itemDetails.price,
         });
         totalAmount += itemDetails.price * orderItem.quantity;
       }
@@ -55,6 +88,8 @@ export class OrderService {
                     id: item.itemId,
                   },
                 },
+                billedItemName: itemList.get(item.itemId).name,
+                billedPricePerQuantity: itemList.get(item.itemId).price,
                 quantity: item.quantity,
               };
             }),

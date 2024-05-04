@@ -19,6 +19,11 @@ export class OrderController {
   constructor(private orderService: OrderService) {}
 
   @ApiBearerAuth()
+  @Get('paid')
+  async getPaidOrders(@Req() req) {
+    return this.orderService.getPaidOrders();
+  }
+  @ApiBearerAuth()
   @Post('checkout')
   async checkoutOrder(
     @Req() req,

@@ -56,6 +56,17 @@ export class ItemService {
     }
   }
 
+  async getItemByCategory(categoryId: string) {
+    try {
+      return await this.prisma.item.findMany({
+        where: { categoryId: categoryId },
+        include: { category: true },
+      });
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
   async createItem(data: {
     name: string;
     categoryId: string;
@@ -116,6 +127,76 @@ export class ItemService {
       });
 
       return newItem;
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async getTodaysItemOrders(itemId: string) {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        0,
+        0,
+        0,
+      );
+      const endOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        23,
+        59,
+        59,
+      );
+
+      return await this.prisma.item.findUnique({
+        where: {
+          id: itemId,
+        },
+        include: {
+          category: true,
+          orderItems: {
+            where: {
+              order: {
+                AND: {
+                  orderTime: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                  },
+                  status: 'PENDING_COLLECTION',
+                },
+              },
+            },
+            include: {
+              order: {
+                include: {
+                  payment: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              orderItems: {
+                where: {
+                  order: {
+                    AND: {
+                      orderTime: {
+                        gte: startOfDay,
+                        lte: endOfDay,
+                      },
+                      status: 'PENDING_COLLECTION',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
     } catch (error) {
       this.handlePrismaError(error);
     }
