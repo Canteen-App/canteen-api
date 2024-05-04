@@ -18,17 +18,29 @@ import { FirebaseAuthGuard } from 'src/auth/admin.guard';
 @UseGuards(FirebaseAuthGuard)
 export class ItemController {
   constructor(private itemService: ItemService) {}
-  
+
   @ApiOperation({ summary: 'Gets Item with all data by ID' }) // Dashboard
   @Get(':id')
   async getItemById(@Param('id') id: string) {
     return this.itemService.getItemById(id);
   }
 
+  @ApiOperation({ summary: 'Get Todays Order for specific item' }) // Dashboard
+  @Get(':id/today-orders')
+  async getTodaysItemOrders(@Param('id') id: string) {
+    return this.itemService.getTodaysItemOrders(id);
+  }
+
   @ApiOperation({ summary: 'Gets Item Info by ID' }) // Ordering App
   @Get('info/:id')
   async getItemInfo(@Req() req, @Param('id') id: string) {
     return this.itemService.getItemInfo(req.user, id);
+  }
+
+  @ApiOperation({ summary: 'Gets Item by Category' })
+  @Get('/category/:categoryId')
+  async getItemsByCategory(@Param('categoryId') categoryId: string) {
+    return this.itemService.getItemByCategory(categoryId);
   }
 
   @ApiOperation({ summary: 'Creates a new Item' })

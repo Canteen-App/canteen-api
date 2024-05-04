@@ -14,6 +14,13 @@ export class CategoryService {
     try {
       return await this.prisma.category.findMany({
         where: { categoryType: categoryType },
+        include: {
+          items: {
+            select: {
+              id: true,
+            },
+          },
+        },
       });
     } catch (error) {
       this.handlePrismaError(error);

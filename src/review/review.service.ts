@@ -6,6 +6,19 @@ export class ReviewService {
   constructor(private prisma: PrismaService) {}
 
   async likeItem(user, itemId) {
+    const checkLike = await this.prisma.favorite.findUnique({
+      where: {
+        itemId_customerId: {
+          customerId: user.uid,
+          itemId: itemId,
+        },
+      },
+    });
+
+    if (checkLike) {
+      return checkLike;
+    }
+
     return await this.prisma.favorite.create({
       data: {
         customer: {
