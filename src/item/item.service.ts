@@ -4,6 +4,7 @@ import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
 } from '@prisma/client/runtime/library';
+import { getTodaysDate } from 'utils/getDate';
 
 @Injectable()
 export class ItemService {
@@ -134,25 +135,9 @@ export class ItemService {
 
   async getTodaysItemOrders(itemId: string) {
     try {
-      const today = new Date();
-      const startOfDay = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-        0,
-        0,
-        0,
-      );
-      const endOfDay = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-        23,
-        59,
-        59,
-      );
+      const todaysDate = getTodaysDate();
 
-      return await this.prisma.item.findUnique({
+      const item = (await this.prisma.item.findUnique({
         where: {
           id: itemId,
         },
@@ -163,8 +148,8 @@ export class ItemService {
               order: {
                 AND: {
                   orderTime: {
-                    gte: startOfDay,
-                    lte: endOfDay,
+                    gte: todaysDate.startOfDay,
+                    lte: todaysDate.endOfDay,
                   },
                   status: 'PENDING_COLLECTION',
                 },
@@ -178,25 +163,19 @@ export class ItemService {
               },
             },
           },
-          _count: {
-            select: {
-              orderItems: {
-                where: {
-                  order: {
-                    AND: {
-                      orderTime: {
-                        gte: startOfDay,
-                        lte: endOfDay,
-                      },
-                      status: 'PENDING_COLLECTION',
-                    },
-                  },
-                },
-              },
-            },
-          },
         },
+      })) as any;
+
+      // Calculate total quantity
+      let totalQuantity = 0;
+      item.orderItems.forEach((orderItem) => {
+        totalQuantity += orderItem.quantity;
       });
+
+      // Add total quantity to the item object
+      item.totalQuantity = totalQuantity;
+
+      return item;
     } catch (error) {
       this.handlePrismaError(error);
     }

@@ -23,6 +23,13 @@ export class OrderController {
   async getPaidOrders(@Req() req) {
     return this.orderService.getPaidOrders();
   }
+
+  @ApiBearerAuth()
+  @Get('todays')
+  async getTodaysOrders(@Req() req) {
+    return this.orderService.getTodaysOrders();
+  }
+
   @ApiBearerAuth()
   @Post('checkout')
   async checkoutOrder(
