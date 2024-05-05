@@ -7,6 +7,7 @@ import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ReviewModule } from './review/review.module';
     OrderModule,
     AuthModule,
     ReviewModule,
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot(),
   ],
   controllers: [AppController],

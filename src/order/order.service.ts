@@ -1,12 +1,55 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import type { OrderItemCreateType } from './types/order.type';
+import { getTodaysDate } from 'utils/getDate';
 
 const stripe = require('stripe')(process.env.STRIPE_KEY);
 
 @Injectable()
 export class OrderService {
   constructor(private prisma: PrismaService) {}
+
+  async getTodaysOrders() {
+    const todaysDate = getTodaysDate();
+
+    return await this.prisma.order.findMany({
+      where: {
+        AND: {
+          status: 'PENDING_COLLECTION',
+          payment: {
+            status: {
+              equals: 'COMPLETE',
+            },
+          },
+          orderTime: {
+            gte: todaysDate.startOfDay,
+            lte: todaysDate.endOfDay,
+          },
+        },
+      },
+      orderBy: {
+        orderTime: 'asc',
+      },
+      include: {
+        payment: true,
+        customer: true,
+        items: {
+          include: {
+            item: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            items: true,
+          },
+        },
+      },
+    });
+  }
 
   async getPaidOrders() {
     return await this.prisma.order.findMany({
