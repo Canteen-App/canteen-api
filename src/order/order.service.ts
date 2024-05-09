@@ -2,12 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import type { OrderItemCreateType } from './types/order.type';
 import { getTodaysDate } from 'utils/getDate';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 const stripe = require('stripe')(process.env.STRIPE_KEY);
 
 @Injectable()
 export class OrderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   async getTodaysOrders() {
     const todaysDate = getTodaysDate();
@@ -49,6 +53,51 @@ export class OrderService {
         },
       },
     });
+  }
+
+  async getTodaysOrderDetails(orderId: string) {
+    const todaysDate = getTodaysDate();
+
+    const order = await this.prisma.order.findFirst({
+      where: {
+        AND: {
+          id: orderId,
+          status: 'PENDING_COLLECTION',
+          payment: {
+            status: {
+              equals: 'COMPLETE',
+            },
+          },
+          orderTime: {
+            gte: todaysDate.startOfDay,
+            lte: todaysDate.endOfDay,
+          },
+        },
+      },
+      orderBy: {
+        orderTime: 'asc',
+      },
+      include: {
+        payment: true,
+        customer: true,
+        items: {
+          include: {
+            item: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            items: true,
+          },
+        },
+      },
+    });
+
+    return order;
   }
 
   async getPaidOrders() {
@@ -270,7 +319,7 @@ export class OrderService {
       const charge = await stripe.charges.retrieve(latest_charge);
 
       if (charge.paid) {
-        const paymentMade = await this.prisma.order.update({
+        const paidOrder = await this.prisma.order.update({
           where: {
             id: orderPayment.orderId,
           },
@@ -285,7 +334,9 @@ export class OrderService {
           },
         });
 
-        return paymentMade;
+        this.eventEmitter.emit('payment.complete', { orderId: paidOrder.id });
+
+        return paidOrder;
       }
     }
     return null;
@@ -315,5 +366,116 @@ export class OrderService {
         payment: true,
       },
     });
+  }
+
+  private async generateCode() {
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += Math.floor(Math.random() * 10); // Generates a random digit between 0 and 9
+    }
+
+    const orderCodes = await this.prisma.orderVerifyCode.findFirst({
+      where: {
+        code: code,
+      },
+    });
+
+    if (orderCodes) {
+      this.generateCode();
+    } else {
+      return code;
+    }
+  }
+
+  async generateOrderCode(user, orderId) {
+    const code = await this.generateCode();
+    const order = await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        orderVerifyCode: {
+          upsert: {
+            update: {
+              code: code,
+            },
+            create: {
+              code: code,
+            },
+          },
+        },
+      },
+    });
+
+    if (order.customerId == user.uid) {
+      return { verifyOrderCode: code };
+    }
+
+    return null;
+  }
+
+  async orderCollection(
+    orderId: string,
+    code: string,
+    collectItemCountList: { itemId: string; collectAmount: number }[],
+  ) {
+    const currentTime = new Date();
+    const fiveMinutesAgo = new Date(currentTime.getTime() - 5 * 60 * 1000);
+
+    // Start Prisma transaction
+    const result = await this.prisma.$transaction(async (prisma) => {
+      const codeOrder = await prisma.orderVerifyCode.findFirst({
+        where: {
+          AND: {
+            code: code,
+            orderId: orderId,
+            createdAt: {
+              gt: fiveMinutesAgo,
+            },
+          },
+        },
+      });
+
+      if (!codeOrder) {
+        return false;
+      }
+
+      const orderItems = [];
+      for (const { itemId, collectAmount } of collectItemCountList) {
+        // Fetch item
+        const item = await prisma.orderItem.findUnique({
+          where: {
+            id: itemId,
+          },
+          select: {
+            quantity: true,
+            quantityCollected: true,
+          },
+        });
+
+        // Calculate the new quantityCollected
+        const newQuantityCollected = Math.min(
+          item.quantity,
+          item.quantityCollected + collectAmount,
+        );
+
+        // Update item within the transaction
+        const orderItem = await prisma.orderItem.update({
+          where: {
+            id: itemId,
+          },
+          data: {
+            quantityCollected: newQuantityCollected,
+          },
+        });
+
+        orderItems.push(orderItem);
+      }
+
+      // Emit event outside the transaction
+      this.eventEmitter.emit('items.collected', { orderId: orderId });
+
+      return orderItems;
+    });
+
+    return result;
   }
 }

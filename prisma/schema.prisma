@@ -73,13 +73,22 @@ model Item {
 }
 
 model Order {
-  id         String      @id @default(uuid())
-  customer   Customer    @relation(fields: [customerId], references: [id])
-  customerId String
-  orderTime  DateTime    @default(now())
-  items      OrderItem[]
-  payment    Payment?
-  status     OrderStatus @default(PENDING_PAYMENT)
+  id              String           @id @default(uuid())
+  customer        Customer         @relation(fields: [customerId], references: [id])
+  customerId      String
+  orderTime       DateTime         @default(now())
+  items           OrderItem[]
+  payment         Payment?
+  status          OrderStatus      @default(PENDING_PAYMENT)
+  orderVerifyCode OrderVerifyCode?
+}
+
+model OrderVerifyCode {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id])
+  code      String   @unique
+  createdAt DateTime @updatedAt
 }
 
 enum OrderStatus {

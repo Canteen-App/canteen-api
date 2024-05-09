@@ -1,6 +1,5 @@
 export const getTodaysDate = () => {
   const today = new Date();
-  // Set start of day to 00:00:00
   const startOfDay = new Date(
     today.getFullYear(),
     today.getMonth(),
@@ -9,7 +8,6 @@ export const getTodaysDate = () => {
     0,
     0,
   );
-  // Set end of day to 23:59:59
   const endOfDay = new Date(
     today.getFullYear(),
     today.getMonth(),
@@ -19,9 +17,16 @@ export const getTodaysDate = () => {
     59,
   );
 
+  // Convert to local time
+  const localStartOfDay = new Date(
+    startOfDay.getTime() - startOfDay.getTimezoneOffset() * 60000,
+  );
+  const localEndOfDay = new Date(
+    endOfDay.getTime() - endOfDay.getTimezoneOffset() * 60000,
+  );
 
   return {
-    startOfDay: startOfDay,
-    endOfDay: endOfDay,
+    startOfDay: localStartOfDay.toISOString(),
+    endOfDay: localEndOfDay.toISOString(),
   };
 };
