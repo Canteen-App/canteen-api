@@ -11,3 +11,13 @@ export class OrderCheckoutDto {
   @IsNotEmpty()
   currentUserDiplayedAmount: number;
 }
+
+export class OrderCollectionDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  code: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  collectItemCountList: { collectAmount: number; itemId: string }[];
+}

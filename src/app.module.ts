@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReviewModule } from './review/review.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     ReviewModule,
     ScheduleModule.forRoot(),
     ConfigModule.forRoot(),
+    EventEmitterModule.forRoot(),
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

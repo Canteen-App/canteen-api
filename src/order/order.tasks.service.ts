@@ -1,15 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma.service';
+import { getTodaysDate } from 'utils/getDate';
 
 @Injectable()
 export class OrderTasksService {
   constructor(private prisma: PrismaService) {}
 
   @Cron('* * * * *')
-  async handleCron() {
+  async handleMinuteCron() {
+    this.handlePaymentTimeExceeding();
+    this.handleCollectionExceeding();
+  }
+
+  private async handlePaymentTimeExceeding() {
     try {
-      console.log('Running Cron Job...');
       const currentDate = new Date();
       const twoHoursAgo = new Date(currentDate.getTime() - 2 * 60 * 60 * 1000); // Two hours ago
 
@@ -28,8 +33,6 @@ export class OrderTasksService {
         },
       });
 
-      console.log(orders);
-
       // Iterate through each order and update if payment is still pending
       for (const order of orders) {
         if (order.payment) {
@@ -47,6 +50,43 @@ export class OrderTasksService {
     } catch (error) {
       // Handle errors
       console.error('Error in cron job:', error);
+    }
+  }
+
+  private async handleCollectionExceeding() {
+    try {
+      const todaysDate = getTodaysDate();
+
+      // Retrieve orders with status "PENDING_COLLECTION" and payment status "COMPLETE"
+      const orders = await this.prisma.order.findMany({
+        where: {
+          AND: [
+            {
+              orderTime: {
+                lte: todaysDate.startOfDay,
+              },
+            }, // Orders placed before the start of the previous day
+            { status: 'PENDING_COLLECTION' },
+          ],
+        },
+        include: {
+          payment: {
+            where: { status: 'COMPLETE' },
+          },
+        },
+      });
+
+      // Iterate through each order and update status if criteria met
+      for (const order of orders) {
+        // Set order status to "NOT_COLLECTED"
+        await this.prisma.order.update({
+          where: { id: order.id },
+          data: { status: 'NOT_COLLECTED' },
+        });
+      }
+    } catch (error) {
+      // Handle errors
+      console.error('Error in daily cron job:', error);
     }
   }
 }
