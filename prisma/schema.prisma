@@ -2,6 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -68,7 +72,6 @@ model Item {
   updatedAt      DateTime    @updatedAt
   orderItems     OrderItem[]
   reviews        Review[]
-  cartUserCartId String?
   likes          Favorite[]
 }
 

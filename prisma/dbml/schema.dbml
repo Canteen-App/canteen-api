@@ -1,0 +1,156 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Staff {
+  id String [pk]
+  name String [not null]
+  phone String [not null]
+  email String [not null]
+  address String [not null]
+  role StaffRole [not null, default: 'Clerk']
+}
+
+Table Customer {
+  id String [pk]
+  name String [not null]
+  orders Order [not null]
+  reviews Review [not null]
+  favoriteItems Favorite [not null]
+}
+
+Table Favorite {
+  itemId String [not null]
+  item Item [not null]
+  customerId String [not null]
+  customer Customer [not null]
+
+  indexes {
+    (itemId, customerId) [pk]
+    (itemId, customerId) [unique]
+  }
+}
+
+Table Category {
+  id String [pk]
+  name String [not null]
+  startTime String
+  endTime String
+  imageURL String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  categoryType CategoryType [not null]
+  items Item [not null]
+}
+
+Table Item {
+  id String [pk]
+  category Category [not null]
+  categoryId String [not null]
+  name String [not null]
+  price Int [not null]
+  description String
+  imageURL String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  orderItems OrderItem [not null]
+  reviews Review [not null]
+  cartUserCartId String
+  likes Favorite [not null]
+}
+
+Table Order {
+  id String [pk]
+  customer Customer [not null]
+  customerId String [not null]
+  orderTime DateTime [default: `now()`, not null]
+  items OrderItem [not null]
+  payment Payment
+  status OrderStatus [not null, default: 'PENDING_PAYMENT']
+  orderVerifyCode OrderVerifyCode
+}
+
+Table OrderVerifyCode {
+  id String [pk]
+  orderId String [unique, not null]
+  order Order [not null]
+  code String [unique, not null]
+  createdAt DateTime [not null]
+}
+
+Table OrderItem {
+  id String [pk]
+  item Item
+  itemId String
+  order Order [not null]
+  orderId String [not null]
+  quantity Int [not null]
+  billedItemName String
+  billedPricePerQuantity Int
+  quantityCollected Int [not null, default: 0]
+}
+
+Table Payment {
+  id String [pk]
+  order Order [not null]
+  orderId String [unique, not null]
+  totalAmount Int [not null]
+  canceledTime DateTime
+  paymentTime DateTime
+  status PaymentStatus [not null, default: 'PENDING']
+  stripePaymentIntentId String [unique, not null]
+}
+
+Table Review {
+  id String [pk]
+  customer Customer [not null]
+  customerId String [not null]
+  item Item [not null]
+  itemId String [not null]
+  feedback String
+  rating Int [not null]
+}
+
+Enum StaffRole {
+  Manager
+  Clerk
+}
+
+Enum CategoryType {
+  DAILY_MEAL
+  NORMAL_CATEGORY
+}
+
+Enum OrderStatus {
+  COMPLETE
+  NOT_COLLECTED
+  CANCELED
+  PENDING_PAYMENT
+  PENDING_COLLECTION
+}
+
+Enum PaymentStatus {
+  CANCELED
+  PENDING
+  COMPLETE
+}
+
+Ref: Favorite.itemId > Item.id
+
+Ref: Favorite.customerId > Customer.id
+
+Ref: Item.categoryId > Category.id
+
+Ref: Order.customerId > Customer.id
+
+Ref: OrderVerifyCode.orderId - Order.id
+
+Ref: OrderItem.itemId > Item.id [delete: No Action]
+
+Ref: OrderItem.orderId > Order.id
+
+Ref: Payment.orderId - Order.id
+
+Ref: Review.customerId > Customer.id
+
+Ref: Review.itemId > Item.id
