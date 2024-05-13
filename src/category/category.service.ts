@@ -44,8 +44,7 @@ export class CategoryService {
         },
       });
 
-      if (category) {
-        // Loop through each item and if there are likes, extract the first one from the array
+      if (category && category.items) {
         category.items.forEach((item) => {
           item.likes = item.likes[0] || (null as any);
         });

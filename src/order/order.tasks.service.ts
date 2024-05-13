@@ -22,7 +22,7 @@ export class OrderTasksService {
       const orders = await this.prisma.order.findMany({
         where: {
           AND: [
-            { orderTime: { lte: twoHoursAgo } }, // Orders placed more than 2 hours ago
+            { orderPlaced: { lte: twoHoursAgo } }, // Orders placed more than 2 hours ago
             { status: 'PENDING_PAYMENT' },
           ],
         },
@@ -62,7 +62,8 @@ export class OrderTasksService {
         where: {
           AND: [
             {
-              orderTime: {
+              // Order Date is the date the order should be collected, includes Pre Order Date.
+              orderDate: {
                 lte: todaysDate.startOfDay,
               },
             }, // Orders placed before the start of the previous day

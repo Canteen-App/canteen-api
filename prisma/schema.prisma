@@ -2,6 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -57,26 +61,26 @@ enum CategoryType {
 }
 
 model Item {
-  id             String      @id @default(uuid())
-  category       Category    @relation(fields: [categoryId], references: [id])
-  categoryId     String
-  name           String
-  price          Int
-  description    String?
-  imageURL       String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  orderItems     OrderItem[]
-  reviews        Review[]
-  cartUserCartId String?
-  likes          Favorite[]
+  id          String      @id @default(uuid())
+  category    Category    @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  name        String
+  price       Int
+  description String?
+  imageURL    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+  reviews     Review[]
+  likes       Favorite[]
 }
 
 model Order {
   id              String           @id @default(uuid())
   customer        Customer         @relation(fields: [customerId], references: [id])
   customerId      String
-  orderTime       DateTime         @default(now())
+  orderDate       DateTime         @default(now())
+  orderPlaced     DateTime         @default(now())
   items           OrderItem[]
   payment         Payment?
   status          OrderStatus      @default(PENDING_PAYMENT)
