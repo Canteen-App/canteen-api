@@ -459,6 +459,8 @@ export class OrderService {
       }
 
       const orderItems = [];
+      let allItemsCollected = true; // Flag to track if all items are collected
+
       for (const { itemId, collectAmount } of collectItemCountList) {
         // Fetch item
         const item = await prisma.orderItem.findUnique({
@@ -488,10 +490,23 @@ export class OrderService {
         });
 
         orderItems.push(orderItem);
+
+        // Check if all items are collected
+        if (newQuantityCollected < item.quantity) {
+          allItemsCollected = false;
+        }
       }
 
       // Emit event outside the transaction
       this.eventEmitter.emit('items.collected', { orderId: orderId });
+
+      // If all items are collected, update order status to "COMPLETE"
+      if (allItemsCollected) {
+        await prisma.order.update({
+          where: { id: orderId },
+          data: { status: 'COMPLETE' },
+        });
+      }
 
       return orderItems;
     });

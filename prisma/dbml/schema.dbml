@@ -2,15 +2,6 @@
 //// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 //// ------------------------------------------------------
 
-Table Staff {
-  id String [pk]
-  name String [not null]
-  phone String [not null]
-  email String [not null]
-  address String [not null]
-  role StaffRole [not null, default: 'Clerk']
-}
-
 Table Customer {
   id String [pk]
   name String [not null]
@@ -109,11 +100,6 @@ Table Review {
   itemId String [not null]
   feedback String
   rating Int [not null]
-}
-
-Enum StaffRole {
-  Manager
-  Clerk
 }
 
 Enum CategoryType {
