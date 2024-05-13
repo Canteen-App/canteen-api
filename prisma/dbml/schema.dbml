@@ -55,7 +55,6 @@ Table Item {
   updatedAt DateTime [not null]
   orderItems OrderItem [not null]
   reviews Review [not null]
-  cartUserCartId String
   likes Favorite [not null]
 }
 
@@ -63,7 +62,8 @@ Table Order {
   id String [pk]
   customer Customer [not null]
   customerId String [not null]
-  orderTime DateTime [default: `now()`, not null]
+  orderDate DateTime [default: `now()`, not null]
+  orderPlaced DateTime [default: `now()`, not null]
   items OrderItem [not null]
   payment Payment
   status OrderStatus [not null, default: 'PENDING_PAYMENT']

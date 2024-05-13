@@ -44,7 +44,7 @@ export class CategoryService {
         },
       });
 
-      if (category) {
+      if (category && category.items) {
         category.items.forEach((item) => {
           item.likes = item.likes[0] || (null as any);
         });

@@ -147,7 +147,7 @@ export class ItemService {
             where: {
               order: {
                 AND: {
-                  orderTime: {
+                  orderDate: {
                     gte: todaysDate.startOfDay,
                     lte: todaysDate.endOfDay,
                   },

@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   Sse,
   UseGuards,
@@ -26,27 +27,29 @@ export class OrderController {
   }
 
   @ApiBearerAuth()
-  @Get('todays')
-  async getTodaysOrders(@Req() req) {
-    return this.orderService.getTodaysOrders();
+  @Get('')
+  async getOrders(@Query('date') date: string) {
+    return this.orderService.getOrdersByDate(date);
   }
 
   @ApiBearerAuth()
   @Get('todays/:id')
   async getTodaysOrderDetails(@Param('id') orderId: string) {
-    return this.orderService.getTodaysOrderDetails(orderId);
+    return this.orderService.getOrderById(orderId);
   }
 
   @ApiBearerAuth()
   @Post('checkout')
   async checkoutOrder(
     @Req() req,
-    @Body() { orderList, currentUserDiplayedAmount }: OrderCheckoutDto,
+    @Body()
+    { orderList, currentUserDiplayedAmount, preOrderDate }: OrderCheckoutDto,
   ) {
     return this.orderService.checkoutOrder(
       req.user,
       orderList,
       currentUserDiplayedAmount,
+      preOrderDate,
     );
   }
 

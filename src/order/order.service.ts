@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import type { OrderItemCreateType } from './types/order.type';
-import { getTodaysDate } from 'utils/getDate';
+import { getStartEndDates, getTodaysDate } from 'utils/getDate';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { checkPreOrder } from '../../utils/checkPreOrder';
 
 const stripe = require('stripe')(process.env.STRIPE_KEY);
 
@@ -13,8 +14,8 @@ export class OrderService {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async getTodaysOrders() {
-    const todaysDate = getTodaysDate();
+  async getOrdersByDate(dateStr?: string) {
+    const dateFilter = getStartEndDates(dateStr);
 
     return await this.prisma.order.findMany({
       where: {
@@ -25,14 +26,14 @@ export class OrderService {
               equals: 'COMPLETE',
             },
           },
-          orderTime: {
-            gte: todaysDate.startOfDay,
-            lte: todaysDate.endOfDay,
+          orderDate: {
+            gte: dateFilter.startOfDay,
+            lte: dateFilter.endOfDay,
           },
         },
       },
       orderBy: {
-        orderTime: 'asc',
+        orderDate: 'asc',
       },
       include: {
         payment: true,
@@ -55,9 +56,7 @@ export class OrderService {
     });
   }
 
-  async getTodaysOrderDetails(orderId: string) {
-    const todaysDate = getTodaysDate();
-
+  async getOrderById(orderId: string) {
     const order = await this.prisma.order.findFirst({
       where: {
         AND: {
@@ -68,14 +67,10 @@ export class OrderService {
               equals: 'COMPLETE',
             },
           },
-          orderTime: {
-            gte: todaysDate.startOfDay,
-            lte: todaysDate.endOfDay,
-          },
         },
       },
       orderBy: {
-        orderTime: 'asc',
+        orderDate: 'asc',
       },
       include: {
         payment: true,
@@ -111,7 +106,7 @@ export class OrderService {
         },
       },
       orderBy: {
-        orderTime: 'desc',
+        orderDate: 'desc',
       },
       include: {
         payment: true,
@@ -130,6 +125,7 @@ export class OrderService {
     user: any,
     orderList: OrderItemCreateType[],
     currentUserDiplayedAmount: number,
+    preOrderDate?: string,
   ) {
     const orderDetails = await this.prisma.$transaction(async (tx) => {
       // Current Order Items Map
@@ -171,6 +167,8 @@ export class OrderService {
               id: user.uid as string,
             },
           },
+          // If pre-order date given enter that or leave undefined for default current date.
+          orderDate: checkPreOrder(preOrderDate),
           items: {
             // Create all Order Items with item and quantity
             create: orderList.map((item) => {
@@ -254,8 +252,8 @@ export class OrderService {
     return this.prisma.order.findMany({
       select: {
         id: true,
-
-        orderTime: true,
+        orderDate: true,
+        orderPlaced: true,
         _count: {
           select: {
             items: true,
@@ -272,7 +270,7 @@ export class OrderService {
         },
       },
       orderBy: {
-        orderTime: 'desc',
+        orderDate: 'desc',
       },
     });
   }
@@ -282,7 +280,8 @@ export class OrderService {
       select: {
         id: true,
 
-        orderTime: true,
+        orderDate: true,
+        orderPlaced: true,
         _count: {
           select: {
             items: true,
@@ -299,7 +298,7 @@ export class OrderService {
         },
       },
       orderBy: {
-        orderTime: 'desc',
+        orderDate: 'desc',
       },
     });
   }
@@ -343,7 +342,7 @@ export class OrderService {
   }
 
   async getOrderDetails(orderId: string) {
-    return await this.prisma.order.findUnique({
+    const order = (await this.prisma.order.findUnique({
       where: {
         id: orderId,
       },
@@ -365,7 +364,17 @@ export class OrderService {
         },
         payment: true,
       },
-    });
+    })) as any;
+
+    // Check if the order is a pre-order
+    if (order && order.orderDate && order.orderPlaced) {
+      const orderDate = new Date(order.orderDate);
+      const orderPlaced = new Date(order.orderPlaced);
+
+      order.isPreOrder = orderDate > orderPlaced;
+    }
+
+    return order;
   }
 
   private async generateCode() {
@@ -389,24 +398,35 @@ export class OrderService {
 
   async generateOrderCode(user, orderId) {
     const code = await this.generateCode();
-    const order = await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        orderVerifyCode: {
-          upsert: {
-            update: {
-              code: code,
-            },
-            create: {
-              code: code,
+    const todaysDate = getTodaysDate();
+    try {
+      const order = await this.prisma.order.update({
+        where: {
+          id: orderId,
+          orderDate: {
+            gte: todaysDate.startOfDay,
+            lte: todaysDate.endOfDay,
+          },
+        },
+        data: {
+          orderVerifyCode: {
+            upsert: {
+              update: {
+                code: code,
+              },
+              create: {
+                code: code,
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    if (order.customerId == user.uid) {
-      return { verifyOrderCode: code };
+      if (order.customerId == user.uid) {
+        return { verifyOrderCode: code };
+      }
+    } catch (error) {
+      return null;
     }
 
     return null;
