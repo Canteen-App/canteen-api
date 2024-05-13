@@ -11,20 +11,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Staff {
-  id      String    @id @default(uuid())
-  name    String
-  phone   String
-  email   String
-  address String
-  role    StaffRole @default(Clerk)
-}
-
-enum StaffRole {
-  Manager
-  Clerk
-}
-
 model Customer {
   id            String     @id
   name          String

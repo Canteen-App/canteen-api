@@ -1,25 +1,34 @@
 import { Controller, Sse } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Observable, fromEvent, map } from 'rxjs';
+import { Observable, Subject, fromEvent, map } from 'rxjs';
 
 @Controller('events')
 export class EventsController {
-  constructor(private eventMitter: EventEmitter2) {}
+  private itemsCollectedSubject: Subject<any> = new Subject<any>();
 
-  @Sse('check-new-orders')
-  checkNewPaidOrders(): Observable<MessageEvent> {
-    return fromEvent(this.eventMitter, 'payment.complete').pipe(
+  constructor(private eventEmitter: EventEmitter2) {
+    // Subscribe to events emitted outside the transaction
+    this.eventEmitter.on('items.collected', (data) => {
+      this.itemsCollectedSubject.next(data);
+    });
+  }
+
+  // SSE endpoint for Ordering App plus Order Management System to subscribe to updates for items collected
+  @Sse('check-items-collected')
+  checkItemsCollected(): Observable<MessageEvent> {
+    return this.itemsCollectedSubject.asObservable().pipe(
       map((orderDetails) => {
-        console.log('Payment: ', orderDetails);
         return { data: orderDetails } as MessageEvent;
       }),
     );
   }
 
-  @Sse('check-items-collected')
-  checkItemsCollected(): Observable<MessageEvent> {
-    return fromEvent(this.eventMitter, 'items.collected').pipe(
+  // Only to be connected from Order Management System
+  @Sse('check-new-orders')
+  checkNewPaidOrders(): Observable<MessageEvent> {
+    return fromEvent(this.eventEmitter, 'payment.complete').pipe(
       map((orderDetails) => {
+        console.log('Payment: ', orderDetails);
         return { data: orderDetails } as MessageEvent;
       }),
     );
