@@ -9,7 +9,7 @@ export class OrderCheckoutDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  currentUserDiplayedAmount: number;
+  currentUserDisplayedAmount: number;
 
   @ApiProperty()
   preOrderDate: string;

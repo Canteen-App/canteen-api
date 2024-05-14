@@ -9,12 +9,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ItemService } from './item.service';
-import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateItemDto, EditItemDto, SetItemImageDto } from './item.dto';
 import { FirebaseAuthGuard } from 'src/auth/admin.guard';
 
 @ApiTags('Item')
 @Controller('item')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 export class ItemController {
   constructor(private itemService: ItemService) {}
