@@ -28,7 +28,6 @@ export class EventsController {
   checkNewPaidOrders(): Observable<MessageEvent> {
     return fromEvent(this.eventEmitter, 'payment.complete').pipe(
       map((orderDetails) => {
-        console.log('Payment: ', orderDetails);
         return { data: orderDetails } as MessageEvent;
       }),
     );

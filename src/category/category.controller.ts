@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
-import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   CategoryImageDto,
   DailyMealCategoryDto,
@@ -20,6 +20,7 @@ import { FirebaseAuthGuard } from 'src/auth/admin.guard';
 
 @ApiTags('Category')
 @Controller('category')
+@ApiBearerAuth()
 @UseGuards(FirebaseAuthGuard)
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
