@@ -9,8 +9,9 @@ import {
   PrismaClientValidationError,
 } from '@prisma/client/runtime/library';
 
-// Order Service
-const stripe = require('stripe')(process.env.STRIPE_KEY);
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_KEY);
 
 @Injectable()
 export class OrderService {
@@ -264,7 +265,7 @@ export class OrderService {
         orderPayment.stripePaymentIntentId,
       );
 
-      const latest_charge = paymentIntent.latest_charge;
+      const latest_charge = paymentIntent.latest_charge as any;
       if (latest_charge) {
         const charge = await stripe.charges.retrieve(latest_charge);
 
@@ -368,7 +369,7 @@ export class OrderService {
       const paymentIntentId = orderPayment.stripePaymentIntentId;
 
       const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      const latest_charge = intent.latest_charge;
+      const latest_charge = intent.latest_charge as any;
       if (latest_charge) {
         const charge = await stripe.charges.retrieve(latest_charge);
 
