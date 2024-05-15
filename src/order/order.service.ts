@@ -9,7 +9,9 @@ import {
   PrismaClientValidationError,
 } from '@prisma/client/runtime/library';
 
-const stripe = require('stripe')(process.env.STRIPE_KEY);
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_KEY);
 
 @Injectable()
 export class OrderService {
@@ -152,36 +154,6 @@ export class OrderService {
     }
   }
 
-  async getPaidOrders() {
-    try {
-      return await this.prisma.order.findMany({
-        where: {
-          status: 'PENDING_COLLECTION',
-          payment: {
-            status: {
-              equals: 'COMPLETE',
-            },
-          },
-        },
-        orderBy: {
-          orderDate: 'desc',
-        },
-        include: {
-          payment: true,
-          customer: true,
-          items: true,
-          _count: {
-            select: {
-              items: true,
-            },
-          },
-        },
-      });
-    } catch (error) {
-      this.handlePrismaError(error);
-    }
-  }
-
   async checkoutOrder(
     user: any,
     orderList: OrderItemCreateType[],
@@ -189,27 +161,34 @@ export class OrderService {
     preOrderDate?: string,
   ) {
     try {
+      if (orderList.length <= 0) {
+        throw new BadRequestException('Order List Empty');
+      }
       const orderDetails = await this.prisma.$transaction(async (tx) => {
         // Current Order Items Map
         const itemList = new Map();
 
         // Calculate total amount and check if it is the same amount displayed to the user
         let totalAmount = 0;
-        for (let orderItem of orderList) {
+        for (const orderItem of orderList) {
           // Adds Order Item price times its quantity
           const itemDetails = await this.prisma.item.findUnique({
             where: { id: orderItem.itemId },
           });
-          itemList.set(itemDetails.id, {
-            name: itemDetails.name,
-            price: itemDetails.price,
-          });
-          totalAmount += itemDetails.price * orderItem.quantity;
+          if (itemDetails && itemDetails.id) {
+            itemList.set(itemDetails.id, {
+              name: itemDetails.name,
+              price: itemDetails.price,
+            });
+            totalAmount += Number(itemDetails.price * orderItem.quantity);
+          } else {
+            throw new BadRequestException('Invalid items are given');
+          }
         }
 
         // Gives an error if the current total amount on the server doesn't match what is shown to the user from the client
         if (totalAmount != currentUserDisplayedAmount) {
-          throw new Error('Wrong total amount displayed to user');
+          throw new BadRequestException('Wrong total amount displayed to user');
         }
 
         // Create Payment Intent
@@ -242,7 +221,7 @@ export class OrderService {
                   },
                   billedItemName: itemList.get(item.itemId).name,
                   billedPricePerQuantity: itemList.get(item.itemId).price,
-                  quantity: item.quantity,
+                  quantity: Number(item.quantity),
                 };
               }),
             },
@@ -286,7 +265,7 @@ export class OrderService {
         orderPayment.stripePaymentIntentId,
       );
 
-      const latest_charge = paymentIntent.latest_charge;
+      const latest_charge = paymentIntent.latest_charge as any;
       if (latest_charge) {
         const charge = await stripe.charges.retrieve(latest_charge);
 
@@ -373,7 +352,7 @@ export class OrderService {
           orderDate: 'desc',
         },
       });
-      return orders
+      return orders;
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -390,7 +369,7 @@ export class OrderService {
       const paymentIntentId = orderPayment.stripePaymentIntentId;
 
       const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      const latest_charge = intent.latest_charge;
+      const latest_charge = intent.latest_charge as any;
       if (latest_charge) {
         const charge = await stripe.charges.retrieve(latest_charge);
 
@@ -483,7 +462,6 @@ export class OrderService {
   ) {
     const currentTime = new Date();
     const fiveMinutesAgo = new Date(currentTime.getTime() - 5 * 60 * 1000);
-
     // Start Prisma transaction
     const result = await this.prisma.$transaction(async (prisma) => {
       const codeOrder = await prisma.orderVerifyCode.findFirst({
@@ -497,53 +475,35 @@ export class OrderService {
           },
         },
       });
-
       if (!codeOrder) {
         return false;
       }
-
       const orderItems = [];
       let allItemsCollected = true; // Flag to track if all items are collected
-
       for (const { itemId, collectAmount } of collectItemCountList) {
         // Fetch item
         const item = await prisma.orderItem.findUnique({
-          where: {
-            id: itemId,
-          },
-          select: {
-            quantity: true,
-            quantityCollected: true,
-          },
+          where: { id: itemId },
+          select: { quantity: true, quantityCollected: true },
         });
-
         // Calculate the new quantityCollected
         const newQuantityCollected = Math.min(
           item.quantity,
           item.quantityCollected + collectAmount,
         );
-
         // Update item within the transaction
         const orderItem = await prisma.orderItem.update({
-          where: {
-            id: itemId,
-          },
-          data: {
-            quantityCollected: newQuantityCollected,
-          },
+          where: { id: itemId },
+          data: { quantityCollected: newQuantityCollected },
         });
-
         orderItems.push(orderItem);
-
         // Check if all items are collected
         if (newQuantityCollected < item.quantity) {
           allItemsCollected = false;
         }
       }
-
       // Emit event outside the transaction
       this.eventEmitter.emit('items.collected', { orderId: orderId });
-
       // If all items are collected, update order status to "COMPLETE"
       if (allItemsCollected) {
         await prisma.order.update({
@@ -551,10 +511,8 @@ export class OrderService {
           data: { status: 'COMPLETE' },
         });
       }
-
       return orderItems;
     });
-
     return result;
   }
 
@@ -567,7 +525,7 @@ export class OrderService {
       throw new BadRequestException(error.message);
     } else {
       console.error(error);
-      throw new BadRequestException('Unknown Error');
+      throw new BadRequestException(error.message);
     }
   }
 }

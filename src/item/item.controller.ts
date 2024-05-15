@@ -58,7 +58,7 @@ export class ItemController {
     return this.itemService.editItem(itemId, data);
   }
 
-  @ApiOperation({ summary: 'Adds a New Image for a Item' })// Order Management System
+  @ApiOperation({ summary: 'Adds a New Image for a Item' }) // Order Management System
   @ApiBody({ type: CreateItemDto })
   @Put(':itemId/set-image')
   async setItemImage(

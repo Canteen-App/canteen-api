@@ -25,7 +25,7 @@ import { FirebaseAuthGuard } from 'src/auth/admin.guard';
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
-  @ApiOperation({ summary: 'Gets all Normal Menu Categories' })
+  @ApiOperation({ summary: 'Gets all Categories based on Category type' })
   @Get(':categoryType')
   async viewNormalCategories(
     @Param('categoryType') categoryType: CategoryType,

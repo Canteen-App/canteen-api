@@ -20,7 +20,9 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
-  @ApiOperation({ summary: "Get Today's Order Details" })
+  @ApiOperation({
+    summary: 'Get All Order Details required for canteen management by orderId',
+  })
   @Get('/get-order/:id')
   async getOrderById(@Param('id') orderId: string) {
     return this.orderService.getOrderById(orderId);
@@ -32,16 +34,12 @@ export class OrderController {
     return this.orderService.getOrdersByDate(date);
   }
 
-  @ApiOperation({ summary: 'Get Order Details by ID' })
+  @ApiOperation({
+    summary: 'Get Order Details required for customer by orderId',
+  })
   @Get('customer/:orderId')
   async getCustomerOrderDetails(@Param('orderId') orderId: string, @Req() req) {
     return this.orderService.getCustomerOrderDetails(orderId, req.user);
-  }
-
-  @ApiOperation({ summary: 'Get Paid Orders' })
-  @Get('paid')
-  async getPaidOrders(@Req() req) {
-    return this.orderService.getPaidOrders();
   }
 
   @ApiOperation({ summary: 'Checkout Order' })
