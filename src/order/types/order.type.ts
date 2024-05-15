@@ -1,5 +1,4 @@
 export interface OrderItemCreateType {
-    itemId: string;
-    quantity: number;
-  }
-  
+  itemId: string;
+  quantity: number;
+}

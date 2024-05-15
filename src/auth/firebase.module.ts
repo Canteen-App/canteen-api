@@ -8,4 +8,4 @@ admin.initializeApp({
   }),
 });
 
-export {admin}
+export { admin };

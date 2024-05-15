@@ -170,7 +170,7 @@ export class OrderService {
 
         // Calculate total amount and check if it is the same amount displayed to the user
         let totalAmount = 0;
-        for (let orderItem of orderList) {
+        for (const orderItem of orderList) {
           // Adds Order Item price times its quantity
           const itemDetails = await this.prisma.item.findUnique({
             where: { id: orderItem.itemId },
